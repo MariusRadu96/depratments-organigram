@@ -1,0 +1,47 @@
+version: "3.7"
+
+networks:
+  backend:
+    name: backend
+    driver: bridge
+
+services:
+  departments_mysql:
+    platform: linux/x86_64
+    image: mysql:8.0
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      MYSQL_USER: dbuser
+      MYSQL_PASSWORD: dbpassword
+      MYSQL_DATABASE: departments
+      MYSQL_ROOT_PASSWORD: rootpassword
+      HOST: 3306
+    networks:
+      - backend
+    ports:
+      - "3306:3306"
+    
+
+ 
+  departments:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8080
+      - MYSQL_DATABASE=departments
+      - MYSQL_HOST=departments_mysql
+      - MYSQL_PORT=3306
+      - MYSQL_USER=dbuser
+      - MYSQL_PASSWORD=dbpassword
+      - MYSQL_URL=mysql://dbuser:dbpassword@tcp(departments_mysql:3306)/departments
+      - JWT_SECRET=test
+    depends_on:
+      - departments_mysql
+    networks:
+      - backend
+    ports:
+      - "8080:8080"
